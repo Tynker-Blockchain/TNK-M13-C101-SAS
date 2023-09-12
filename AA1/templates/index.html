@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <link rel="stylesheet" type="text/css" href="{{ '/static/css/style.css' }}" />
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid row" style="height: 100vh; overflow: scroll;">
+        <div class="col-12 d-flex justify-content-center align-items-center">
+
+            <div class="card text-center" id="card2" style="width: 60%;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if isConnected%}
+                        <span class="status-circle status-connected"></span>
+                        Connected
+                        {% else %}
+                        <span class="status-circle status-disconnected"></span>
+                        Disconnect
+                        {% endif %}
+                    </div>
+                    {% if isSignedIn %}
+                    <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Accounts
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            {% for account in allAccounts %}
+                            <a href={{"/changeAccount" + "?address="+ (allAccounts.index(account)|string)}} style="text-decoration: none">
+                                <span class=" dropdown-item ph-5">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/2048px-Ethereum-icon-purple.svg.png"
+                                        alt="Option 1" class="img-fluid" width="30px" height="30px">
+                                    {{account['address']}}
+                                </span>
+                            </a>
+                            
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <form action="{{url_for('createAccount')}}" method="post" >
+                        <button type="submit" class="btn btn-warning" >
+                            Create Account Address
+                        </button>
+                    </form>
+                </div>
+                    <form action="{{url_for('signOut')}}" method="post" >
+                        <button type="submit" class="btn btn-danger" >
+                            Sign Out
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% if isSignedIn %}
+                <div class="card-body d-flex flex-column g-3 align-items-center gap-3">
+                    <span class="card-rounded-span" id="accountAddress">{{account.address}}</span>
+                    <h3 class="card-title" id="accountBalance">{{balance}} ETH</h3>
+                    <div class="row justify-content-center w-100">
+                        <div class="option-button col-12">
+                            <form action="{{url_for('makeTransaction', form='w1')}}" method="post" id="form1">
+                                <div class="row g-2">    
+                                    <div class="col-9">
+                                        <input class="col-4 form-control w-100" type="text" placeholder="Receiver Address"
+                                    name="receiverAddress" id="receiverAddress">
+                                    </div>       
+                                            
+                                    <div class="col-3">    
+                                        <input class="col-3 form-control w-100" type="text" placeholder="Amount"
+                                        name="amount" id="amount"> 
+                                    </div>                            
+                                </div>    
+                                <button type="submit" class="btn btn-primary mt-2 w-50" onclick="sendTransaction()">
+                                    <i class="bi bi-send"></i>
+                                    Send
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="container mt-5">
+                        <ul class="nav nav-tabs" id="myTabs">
+                          <li class="nav-item">
+                            <a class="nav-link active" id="tab1-tab" data-bs-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="true">Transactions</a>
+                          </li>
+                        </ul>
+                        <div class="tab-content" id="myTabContent">
+                          <div class="tab-pane fade show active" id="tab1" role="tabpanel" aria-labelledby="tab1-tab" style="  overflow: scroll;
+                                                                                                                                height: 300px;">
+                            {% if transactions%}
+                            {% for transaction in transactions%}
+                            <hr/>
+                                <div class="row justify-content-between g-2 w-100">
+                                <div class="col-1">
+                                    <i class="bi {{ 'bi-cloud-download' if account.address == transaction['to'] else 'bi-cloud-upload' }} text-primary"></i>
+                                </div>
+                                <div class="col-9 text-start " style="font-size: 14px;">
+                                    
+                                    <div>
+                                        <span>{{ 'Received' if account.address == transaction['to'] else 'Sent' }}</span>
+                                    </div>
+                                    <div>
+                                        <span>To: {{transaction['to']}}</span>
+                                    </div>
+                                    <div>
+                                        <span>From: {{transaction['from']}}</span>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <span class="badge {{ 'bg-primary' if account.address == transaction['to'] else 'bg-danger' }}">{{transaction['amount']}} ETH</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+
+
+
+                </div>
+                {% else %}
+                <div class="card-body d-flex justify-content-center align-items-center flex-column gap-5">
+                    <img src="https://cdn-icons-png.flaticon.com/512/9118/9118986.png" style="width: 100px "/>
+                    <form action="{{url_for('signIn')}}" method="post" class="d-flex flex-column col-6 justify-content-center align-items-center gap-3">
+                        <input class="col-4 form-control w-100" type="text" placeholder="Username"
+                            name="user">
+                        <input class="col-4 form-control w-100" type="text" placeholder="Password"
+                            name="password">
+                                    
+                        <button type="submit" class="btn btn-primary mt-2 w-50" >
+                            Sign In
+                        </button>
+                    </form>
+            
+                </div>
+                
+                {% endif %}
+                <div class="card-footer text-muted">
+                    @Block Wallet
+                </div>
+            </div>
+        </div>
+         {% if isSignedIn%}
+        <div class="container d-flex justify-content-center align-items-center gap-3 mt-3">
+            <div id="Transactions-chart"></div>
+            <div id="Transactions-Line-chart"></div>
+            <script>
+                
+                transactionData ={{transactionData | tojson }}
+                transactionData = JSON.parse(transactionData)
+                Plotly.newPlot('Transactions-chart', transactionData.trace, transactionData.layout);
+
+                
+                balanceData ={{balanceData | tojson }}
+                balanceData = JSON.parse(balanceData)
+                Plotly.newPlot('Transactions-Line-chart', balanceData.trace, balanceData.layout);
+            </script> 
+        </div>
+        <div class="container d-flex justify-content-center align-items-center gap-3 mt-3">
+            <!--Create div with id Transactions_Pie_chart-->
+            <div id="Transactions_Pie_chart"></div>
+
+            <script>    
+                // Create transactionDataPie variable and store transaction Data in JSON format using Jinja
+                transactionDataPie = {{transactionDataPie | tojson}}
+                //Convert transactionDataPie to javascript object
+                transactionDataPie = JSON.parse(transactionDataPie)
+                //Use plotly to plot the Pie graph in "Transactions_Pie_chart" div
+                Plotly.newPlot('Transactions_Pie_chart', transactionDataPie.data, transactionDataPie.layout);
+                       
+            </script> 
+        </div>
+        {% endif%}
+
+    </div>
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
